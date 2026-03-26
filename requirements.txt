@@ -5,3 +5,4 @@ gTTS
 pydub
 pocketsphinx
 ollama
+PyAudio
