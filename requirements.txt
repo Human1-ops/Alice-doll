@@ -1,0 +1,7 @@
+torch
+SpeechRecognition
+better_profanity
+gTTS
+pydub
+pocketsphinx
+ollama
