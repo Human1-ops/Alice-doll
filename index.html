@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Babydow & BitLife Generational Demo</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #ec4899;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding: var(--safe-top) 0 var(--safe-bottom) 0;
+    }
+    .iphone-container {
+      width: 100%;
+      max-width: 428px; /* iPhone 13 Pro Max width */
+      min-height: 100vh;
+      background: var(--card-bg);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+    header {
+      padding: 16px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 9999px;
+      background: #e0f2fe;
+      color: #0369a1;
+      margin-bottom: 6px;
+    }
+    .char-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .char-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px 16px;
+      background: #f1f5f9;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .stat-val {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .content-area {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    button {
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+    button:active {
+      background: #f1f5f9;
+      transform: scale(0.98);
+    }
+    button.primary-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+    }
+    button.primary-btn:active {
+      background: var(--primary-dark);
+    }
+    button.warning-btn {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .log-container {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .toast {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      animation: fadeIn 0.3s;
+    }
+    .toast.info { background: #e0f2fe; color: #075985; }
+    .toast.warn { background: #fee2e2; color: #991b1b; }
+    .toast.success { background: #dcfce7; color: #166534; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="iphone-container">
+  <header>
+    <div id="mode-badge" class="badge">🍼 Babydow Mode</div>
+    <h1 id="char-name" class="char-title">Baby Luna</h1>
+    <div id="char-subtitle" class="char-subtitle">Generation 1 • Age: 0 months</div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-label">Health</div>
+      <div id="stat-health" class="stat-val">100%</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Happiness</div>
+      <div id="stat-happiness" class="stat-val">100%</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Hunger</div>
+      <div id="stat-hunger" class="stat-val">0%</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Cleanliness</div>
+      <div id="stat-hygiene" class="stat-val">100%</div>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div id="notifications"></div>
+
+    <!-- Active Stage Interactive Card -->
+    <div id="action-card" class="card">
+      <div class="card-title" id="card-heading">🍼 Feeding Care</div>
+      <p id="card-desc" style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">
+        Babies under 9 months strictly require breast milk! Solid baby foods unlock at 9 months.
+      </p>
+
+      <div class="btn-group" id="actions-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- History / Event Log -->
+    <div class="card">
+      <div class="card-title">📜 Life Story & Milestones</div>
+      <div id="event-log" class="log-container">
+        Baby Luna was born! Welcome to Generation 1.
+      </div>
+    </div>
+
+    <button id="next-stage-btn" class="primary-btn" onclick="advanceTime()">
+      ⏭️ Advance Age
+    </button>
+  </div>
+</div>
+
+<script>
+  const FOOD_BRANDS = [
+    { brand: "TinyTummy Organics", item: "Sweet Potato Mash" },
+    { brand: "NutriTot Purees", item: "Banana Oatmeal Mash" },
+    { brand: "LittleSprout Munchies", item: "Spinach Pear Blend" },
+    { brand: "ChubbyCheeks Gourmet", item: "Butternut Squash Puree" }
+  ];
+
+  const DIAPER_BRANDS = [
+    { brand: "CloudyBottoms Ultra Dry", tag: "12hr leak-lock feather soft" },
+    { brand: "SnuggleBum Eco Diapers", tag: "100% plant-based bamboo" },
+    { brand: "CuddlePaws Comfort Fit", tag: "Flex waistband with wetness indicator" }
+  ];
+
+  let state = {
+    name: "Luna",
+    gen: 1,
+    parentName: "You",
+    months: 0,
+    years: 0,
+    health: 100,
+    happiness: 100,
+    hunger: 10,
+    hygiene: 100,
+    smarts: 60,
+    parentBond: 100,
+    career: null
+  };
+
+  function showToast(msg, type = "info") {
+    const notifs = document.getElementById("notifications");
+    notifs.innerHTML = `<div class="toast ${type}">${msg}</div>`;
+  }
+
+  function appendLog(msg) {
+    const log = document.getElementById("event-log");
+    log.innerHTML = `<div>• ${msg}</div>` + log.innerHTML;
+  }
+
+  function updateUI() {
+    document.getElementById("char-name").innerText = state.years === 0 ? `Baby ${state.name}` : state.name;
+    document.getElementById("char-subtitle").innerText = state.years === 0
+      ? `Generation ${state.gen} • Age: ${state.months} months • Parent: ${state.parentName}`
+      : `Generation ${state.gen} • Age: ${state.years} years old • Parent: ${state.parentName}`;
+
+    document.getElementById("stat-health").innerText = `${state.health}%`;
+    document.getElementById("stat-happiness").innerText = `${state.happiness}%`;
+    document.getElementById("stat-hunger").innerText = `${state.hunger}%`;
+    document.getElementById("stat-hygiene").innerText = `${state.hygiene}%`;
+
+    const badge = document.getElementById("mode-badge");
+    const heading = document.getElementById("card-heading");
+    const desc = document.getElementById("card-desc");
+    const container = document.getElementById("actions-container");
+    const nextBtn = document.getElementById("next-stage-btn");
+
+    if (state.years === 0) {
+      badge.innerText = "🍼 Babydow Mode";
+      badge.style.background = "#e0f2fe";
+      badge.style.color = "#0369a1";
+      nextBtn.innerText = `⏭️ Age Up to Month ${state.months + 1}`;
+
+      heading.innerText = `🍼 Infant Care (${state.months} Months Old)`;
+      desc.innerText = state.months < 9
+        ? "Babies under 9 months strictly require breast milk! Solid baby foods cannot be digested yet."
+        : "Baby is 9+ months old! Fictional solid baby foods are now unlocked!";
+
+      let btns = `
+        <button onclick="feedMilk()">
+          <span>🍼 Feed Breast Milk</span>
+          <span style="font-size:12px;color:var(--text-muted)">Essential for < 9m</span>
+        </button>
+      `;
+
+      FOOD_BRANDS.forEach(food => {
+        const isLocked = state.months < 9;
+        btns += `
+          <button class="${isLocked ? 'warning-btn' : ''}" onclick="feedFood('${food.item}', '${food.brand}', ${isLocked})">
+            <span>🥣 ${food.item} (${food.brand})</span>
+            <span style="font-size:12px;">${isLocked ? '🔒 Needs 9+ mo' : '✅ Ready'}</span>
+          </button>
+        `;
+      });
+
+      btns += `<div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--text-muted)">CHANGE DIAPER BRANDS:</div>`;
+      DIAPER_BRANDS.forEach(diaper => {
+        btns += `
+          <button onclick="changeDiaper('${diaper.brand}', '${diaper.tag}')">
+            <span>🧷 ${diaper.brand}</span>
+            <span style="font-size:11px;color:var(--text-muted)">${diaper.tag}</span>
+          </button>
+        `;
+      });
+
+      container.innerHTML = btns;
+    } else if (state.years < 18) {
+      badge.innerText = "🎒 BitLife Mode (Growing Up)";
+      badge.style.background = "#fef3c7";
+      badge.style.color = "#b45309";
+      nextBtn.innerText = `⏭️ Age Up to Age ${state.years + 1}`;
+
+      heading.innerText = `School & Childhood (Age ${state.years})`;
+      desc.innerText = `Make yearly choices to shape ${state.name}'s life, smarts, and bond with parents.`;
+
+      container.innerHTML = `
+        <button onclick="spendFamilyTime()">
+          <span>👨‍👩‍👧 Spend Family Quality Time</span>
+          <span style="font-size:12px;color:var(--text-muted)">+Bond</span>
+        </button>
+        <button onclick="studyHard()">
+          <span>📚 Study Hard in School</span>
+          <span style="font-size:12px;color:var(--text-muted)">+Smarts</span>
+        </button>
+        <button onclick="doSports()">
+          <span>⚽ Play Sports & Hobbies</span>
+          <span style="font-size:12px;color:var(--text-muted)">+Health</span>
+        </button>
+      `;
+    } else if (state.years < 35) {
+      badge.innerText = "💼 Adulthood & Family Life";
+      badge.style.background = "#dcfce7";
+      badge.style.color = "#15803d";
+      nextBtn.innerText = `⏭️ Advance to Age ${state.years + 1}`;
+
+      heading.innerText = `Adulthood (Age ${state.years})`;
+      desc.innerText = `${state.name} is building their life and visiting you often as you age.`;
+
+      container.innerHTML = `
+        <button onclick="spendFamilyTime()">
+          <span>🏡 Visit Parents for Sunday Dinner</span>
+          <span style="font-size:12px;color:var(--text-muted)">+Bond</span>
+        </button>
+        <button onclick="workCareer()">
+          <span>💼 Focus on Career & Milestones</span>
+          <span style="font-size:12px;color:var(--text-muted)">+Success</span>
+        </button>
+      `;
+    } else {
+      // Age 35: Grandbaby arrives!
+      badge.innerText = "👶 Grandbaby Arrival & Rebirth";
+      badge.style.background = "#fce7f3";
+      badge.style.color = "#be185d";
+      nextBtn.innerText = "🔄 Reincarnate as Grandbaby";
+
+      heading.innerText = `🎉 Age 35: Grandbaby Arrival!`;
+      desc.innerText = `${state.name} has had a child and brings you your grandbaby! You will now play as the grandbaby in Babydow & BitLife mode.`;
+
+      container.innerHTML = `
+        <button class="primary-btn" onclick="rebirth()">
+          <span>👶 Start Life as Grandbaby Aria</span>
+          <span>✨</span>
+        </button>
+      `;
+    }
+  }
+
+  function feedMilk() {
+    state.hunger = Math.max(0, state.hunger - 35);
+    state.happiness = Math.min(100, state.happiness + 15);
+    showToast(`🍼 Fed ${state.name} nourishing breast milk! Clean & satisfied.`, "success");
+    appendLog(`Fed breast milk. Hunger is now ${state.hunger}%.`);
+    updateUI();
+  }
+
+  function feedFood(item, brand, isLocked) {
+    if (isLocked) {
+      showToast(`⚠️ ${state.name} is only ${state.months} months old! Babies under 9 months must have breast milk; ${brand} cannot be digested yet.`, "warn");
+      return;
+    }
+    state.hunger = Math.max(0, state.hunger - 50);
+    state.happiness = Math.min(100, state.happiness + 20);
+    showToast(`🥣 Fed ${state.name} ${item} by ${brand}! Delicious!`, "success");
+    appendLog(`Fed solid food: ${item} (${brand}).`);
+    updateUI();
+  }
+
+  function changeDiaper(brand, tag) {
+    state.hygiene = 100;
+    state.happiness = Math.min(100, state.happiness + 10);
+    showToast(`🧷 Changed diaper with ${brand} (${tag})! Fresh and dry.`, "success");
+    appendLog(`Changed diaper using ${brand}.`);
+    updateUI();
+  }
+
+  function spendFamilyTime() {
+    state.parentBond = Math.min(100, state.parentBond + 15);
+    state.happiness = Math.min(100, state.happiness + 15);
+    showToast(`❤️ Spent quality time with parents! Family bond strengthened.`, "success");
+    appendLog(`Spent family time together.`);
+    updateUI();
+  }
+
+  function studyHard() {
+    state.smarts = Math.min(100, state.smarts + 10);
+    showToast(`📚 Studied hard! Smarts increased to ${state.smarts}%.`, "info");
+    appendLog(`Studied hard in school.`);
+    updateUI();
+  }
+
+  function doSports() {
+    state.health = Math.min(100, state.health + 10);
+    state.happiness = Math.min(100, state.happiness + 10);
+    showToast(`⚽ Played soccer with friends! Health is ${state.health}%.`, "info");
+    appendLog(`Engaged in sports and active play.`);
+    updateUI();
+  }
+
+  function workCareer() {
+    state.smarts = Math.min(100, state.smarts + 5);
+    showToast(`💼 Made great progress at work!`, "info");
+    appendLog(`Achieved a work milestone.`);
+    updateUI();
+  }
+
+  function advanceTime() {
+    if (state.years === 0) {
+      state.months += 1;
+      state.hunger = Math.min(100, state.hunger + 25);
+      state.hygiene = Math.max(0, state.hygiene - 25);
+
+      if (state.months === 3) appendLog("✨ Milestone: First Bright Smile!");
+      if (state.months === 6) appendLog("✨ Milestone: Sitting up unsupported!");
+      if (state.months === 9) {
+        showToast("🎉 Milestone: 9 Months Old! Transitioning from breast milk to solid baby foods!", "success");
+        appendLog("🎉 Milestone: Turned 9 months old! Unlocked solid baby food brands.");
+      }
+      if (state.months === 12) {
+        state.years = 1;
+        appendLog("🎂 1st Birthday: Took first wobbly steps!");
+      }
+    } else if (state.years < 35) {
+      state.years += 1;
+      appendLog(`📅 Turned ${state.years} years old.`);
+      if (state.years === 17) {
+        state.career = "Pediatrician";
+        appendLog("🎓 Graduated high school at 17! Set off on career path.");
+      }
+      if (state.years === 35) {
+        showToast(`👶 At age 35, ${state.name} has a baby and brings you your grandbaby!`, "success");
+        appendLog(`👶 At age 35, ${state.name} brings you their newborn grandbaby, Aria!`);
+      }
+    } else {
+      rebirth();
+      return;
+    }
+    updateUI();
+  }
+
+  function rebirth() {
+    const parent = state.name;
+    state = {
+      name: "Aria",
+      gen: state.gen + 1,
+      parentName: parent,
+      months: 0,
+      years: 0,
+      health: 100,
+      happiness: 100,
+      hunger: 0,
+      hygiene: 100,
+      smarts: 65,
+      parentBond: 100,
+      career: null
+    };
+    showToast(`🔄 Reborn as grandbaby Aria (Generation ${state.gen})! Cycle begins anew.`, "success");
+    appendLog(`🔄 Rebirth: You are now playing as baby Aria (Generation ${state.gen}) with parent ${parent}!`);
+    updateUI();
+  }
+
+  updateUI();
+</script>
+
+</body>
+</html>

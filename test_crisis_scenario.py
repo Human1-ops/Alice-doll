@@ -18,6 +18,9 @@ def cleanup_state():
 def run_scenario(inputs):
     env = os.environ.copy()
     env['PYTHONUNBUFFERED'] = '1'
+    mocks_dir = os.path.join(os.path.dirname(__file__), 'mocks')
+    if os.path.exists(mocks_dir):
+        env['PYTHONPATH'] = mocks_dir + os.pathsep + env.get('PYTHONPATH', '')
     process = subprocess.run(
         [sys.executable, 'crisis_scenario.py'],
         input='\n'.join(inputs) + '\n',
