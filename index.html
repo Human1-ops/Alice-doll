@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sphere 6-inch Console - Alphabet Adventure Demo</title>
+  <style>
+    :root {
+      --sphere-bg: radial-gradient(circle at 35% 30%, #5eead4 0%, #0d9488 45%, #115e59 80%, #042f2e 100%);
+      --bezel: #1f2937;
+      --screen-glass: #0f172a;
+      --accent: #f59e0b;
+      --accent-neon: #38bdf8;
+      --text: #f8fafc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      background: #090d16;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      color: #38bdf8;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+    header p {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .layout-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 24px;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    /* THE SPHERE HARDWARE CHASSIS */
+    .sphere-wrapper {
+      position: relative;
+      width: 440px;
+      height: 440px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .sphere-outer {
+      position: relative;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: var(--sphere-bg);
+      box-shadow:
+        inset -15px -15px 40px rgba(0, 0, 0, 0.7),
+        inset 15px 15px 30px rgba(255, 255, 255, 0.35),
+        0 20px 45px rgba(0, 0, 0, 0.8),
+        0 0 30px rgba(13, 148, 136, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.15s ease-out;
+    }
+    .sphere-outer.shaking {
+      animation: sphere-rattle 0.35s infinite;
+    }
+    @keyframes sphere-rattle {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-6px, 5px) rotate(-2deg); }
+      40% { transform: translate(5px, -6px) rotate(2deg); }
+      60% { transform: translate(-5px, -4px) rotate(-1deg); }
+      80% { transform: translate(6px, 4px) rotate(1deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    /* PHYSICAL ROTATING TWIST BEZEL */
+    .twist-ring {
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      border: 8px dashed rgba(255, 255, 255, 0.3);
+      box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.6),
+        0 0 12px rgba(255, 255, 255, 0.2);
+      cursor: grab;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: box-shadow 0.2s;
+    }
+    .twist-ring:active {
+      cursor: grabbing;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.8);
+    }
+    .twist-indicator {
+      position: absolute;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      background: #ef4444;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    /* INTERNAL BEADS CAVITY */
+    .beads-canvas {
+      position: absolute;
+      width: 330px;
+      height: 330px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* 6-INCH CIRCULAR TOUCHSCREEN */
+    .screen-6inch {
+      position: relative;
+      width: 270px;
+      height: 270px;
+      border-radius: 50%;
+      background: var(--screen-glass);
+      border: 5px solid #1e293b;
+      box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 15px rgba(15, 23, 42, 0.8);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    /* SCREEN HUD */
+    .screen-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      z-index: 6;
+      pointer-events: none;
+    }
+    .level-badge {
+      font-size: 0.72rem;
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      margin-top: 10px;
+    }
+    .target-letter {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: #fbbf24;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+      line-height: 1;
+    }
+    .island-name {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #e2e8f0;
+    }
+    .stage-instruction {
+      font-size: 0.72rem;
+      color: #38bdf8;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 8px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      max-width: 200px;
+    }
+
+    /* STYLUS DRAWING CANVAS OVERLAY */
+    #stylusCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      z-index: 7;
+      cursor: crosshair;
+    }
+
+    /* PULL MECHANIC CORD & HANDLE */
+    .pull-cord-mechanism {
+      position: absolute;
+      bottom: -32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+    .cord-line {
+      width: 6px;
+      height: 30px;
+      background: repeating-linear-gradient(45deg, #f59e0b, #f59e0b 5px, #d97706 5px, #d97706 10px);
+      border-radius: 3px;
+      transition: height 0.05s ease-out;
+    }
+    .pull-handle {
+      width: 50px;
+      height: 20px;
+      background: linear-gradient(180deg, #f59e0b, #b45309);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      cursor: ns-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    /* MICROSD CARTRIDGE SLOT */
+    .microsd-slot-container {
+      position: absolute;
+      top: -16px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+    .cartridge {
+      width: 44px;
+      height: 28px;
+      background: #1e293b;
+      border: 2px solid #38bdf8;
+      border-radius: 4px 4px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: bold;
+      color: #38bdf8;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .cartridge.ejected {
+      transform: translateY(-16px);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
+    /* STYLUS HOLSTER */
+    .stylus-holster {
+      position: absolute;
+      top: 50px;
+      left: -12px;
+      z-index: 10;
+      cursor: pointer;
+    }
+    .stylus-pen {
+      width: 14px;
+      height: 90px;
+      background: linear-gradient(90deg, #94a3b8, #f8fafc, #64748b);
+      border-radius: 7px 7px 2px 2px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s;
+      position: relative;
+    }
+    .stylus-pen.undocked {
+      transform: translateY(-24px) rotate(-15deg);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+    }
+    .stylus-pen::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 4px;
+      width: 6px;
+      height: 6px;
+      background: #0f172a;
+      border-radius: 50%;
+    }
+
+    /* CONTROL & DASHBOARD PANEL */
+    .controls-panel {
+      flex: 1;
+      min-width: 320px;
+      max-width: 460px;
+      background: #131b2e;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .panel-section {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .panel-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .panel-section h3 {
+      font-size: 0.9rem;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mechanic-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+    }
+    .btn {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: bold;
+      transition: background 0.15s;
+    }
+    .btn:hover {
+      background: #0369a1;
+    }
+    .btn-secondary {
+      background: #334155;
+    }
+    .btn-secondary:hover {
+      background: #475569;
+    }
+    .btn-accent {
+      background: #f59e0b;
+      color: #1e293b;
+    }
+    .btn-accent:hover {
+      background: #d97706;
+    }
+    .status-box {
+      background: #0b1120;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+      border-left: 3px solid #38bdf8;
+    }
+    .slider-control {
+      width: 100%;
+      accent-color: #38bdf8;
+    }
+    .stage-steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.78rem;
+    }
+    .stage-step {
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stage-step.active {
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid #38bdf8;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .stage-step.done {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+    .voice-meter {
+      height: 8px;
+      background: #1e293b;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .voice-meter-fill {
+      height: 100%;
+      width: 0%;
+      background: #10b981;
+      transition: width 0.1s;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔮 OrbPlay 6" Sphere Console</h1>
+    <p>Alphabet Adventure Demo — All Hardware Mechanics Integrated</p>
+  </header>
+
+  <div class="layout-container">
+
+    <!-- PHYSICAL SPHERICAL DEVICE -->
+    <div class="sphere-wrapper">
+
+      <!-- MicroSD Cartridge Slot -->
+      <div class="microsd-slot-container">
+        <div class="cartridge" id="microSDCard" title="MicroSD Cartridge Slot">
+          <span>SD-ALPH</span>
+        </div>
+      </div>
+
+      <!-- Stylus Dock / Holster -->
+      <div class="stylus-holster" id="stylusHolster" title="Click to Un-dock / Dock Stylus">
+        <div class="stylus-pen" id="stylusPen"></div>
+      </div>
+
+      <!-- Outer 3D Sphere Body -->
+      <div class="sphere-outer" id="sphereChassis">
+
+        <!-- Twist Mechanic: Outer Rotating Ring -->
+        <div class="twist-ring" id="twistRing" title="Twist Outer Ring to Select Letters">
+          <div class="twist-indicator"></div>
+        </div>
+
+        <!-- Shake Mechanic: Physics Beads Canvas -->
+        <canvas class="beads-canvas" id="beadsCanvas" width="330" height="330"></canvas>
+
+        <!-- 6-inch Screen Display -->
+        <div class="screen-6inch" id="deviceScreen">
+          <div class="screen-content">
+            <div class="level-badge" id="screenBadge">STAGE 1: TWIST</div>
+            <div>
+              <div class="target-letter" id="screenTargetLetter">A</div>
+              <div class="island-name" id="screenIslandName">Astronaut Island</div>
+            </div>
+            <div class="stage-instruction" id="screenInstruction">Twist outer ring to 45°</div>
+          </div>
+          <!-- Stylus Touch Interaction Layer -->
+          <canvas id="stylusCanvas" width="270" height="270"></canvas>
+        </div>
+
+      </div>
+
+      <!-- Pull Mechanic: Spring Ripcord -->
+      <div class="pull-cord-mechanism">
+        <div class="cord-line" id="pullCordLine"></div>
+        <div class="pull-handle" id="pullHandle">PULL</div>
+      </div>
+
+    </div>
+
+    <!-- CONTROLS & DIAGNOSTICS DASHBOARD -->
+    <div class="controls-panel">
+
+      <!-- QUEST & STAGES -->
+      <div class="panel-section">
+        <h3>🏆 Alphabet Adventure Quest</h3>
+        <ul class="stage-steps-list" id="stageList">
+          <li class="stage-step active" id="step1">1. 🔄 Twist Mechanic (Align dial angle)</li>
+          <li class="stage-step" id="step2">2. 📳 Shake Mechanic (Rattle internal beads)</li>
+          <li class="stage-step" id="step3">3. 🏹 Pull Mechanic (Spring ripcord launch)</li>
+          <li class="stage-step" id="step4">4. 🎙️ Talk Mechanic (Speak phonics sound)</li>
+          <li class="stage-step" id="step5">5. ✍️ Stylus Mechanic (Trace letter on 6" screen)</li>
+        </ul>
+      </div>
+
+      <!-- MECHANICS SIMULATION CONTROLS -->
+      <div class="panel-section">
+        <h3>🎮 Hardware Controls</h3>
+
+        <!-- 1. Twist -->
+        <div class="mechanic-row">
+          <span>🔄 Twist Angle: <strong id="twistAngleLabel">0°</strong></span>
+          <button class="btn btn-secondary" onclick="simulateTwist()">Auto-Twist to Target</button>
+        </div>
+        <input type="range" min="0" max="359" value="0" class="slider-control" id="twistSlider" oninput="onTwistSlider(this.value)">
+
+        <!-- 2. Shake & Beads -->
+        <div class="mechanic-row" style="margin-top: 10px;">
+          <span>📳 Shake Energy: <strong id="shakeLabel">0.0</strong></span>
+          <button class="btn btn-accent" id="shakeBtn" onclick="simulateShake()">Rattle Sphere & Beads</button>
+        </div>
+
+        <!-- 3. Pull Ripcord -->
+        <div class="mechanic-row">
+          <span>🏹 Pull Cord Tension: <strong id="pullLabel">0%</strong></span>
+          <button class="btn btn-secondary" onclick="simulatePullLaunch()">Quick Launch</button>
+        </div>
+        <input type="range" min="0" max="100" value="0" class="slider-control" id="pullSlider" oninput="onPullSlider(this.value)">
+
+        <!-- 4. Talk Microphone -->
+        <div class="mechanic-row" style="margin-top: 10px;">
+          <span>🎙️ Microphone Talk: <strong id="voiceLabel">Silent</strong></span>
+          <button class="btn" onclick="simulateVoiceSpeak()">Speak Phonics Sound</button>
+        </div>
+        <div class="voice-meter">
+          <div class="voice-meter-fill" id="voiceFill"></div>
+        </div>
+
+        <!-- 5. Stylus Dock & Trace -->
+        <div class="mechanic-row" style="margin-top: 10px;">
+          <span>✍️ Stylus State: <strong id="stylusStateLabel">Docked</strong></span>
+          <div>
+            <button class="btn btn-secondary" onclick="toggleStylusDock()">Dock/Undock</button>
+            <button class="btn" onclick="autoTraceStylus()">Auto-Trace Letter</button>
+          </div>
+        </div>
+
+        <!-- 6. MicroSD Cartridge -->
+        <div class="mechanic-row" style="margin-top: 10px;">
+          <span>💾 MicroSD Slot: <strong id="sdStatusLabel">Inserted</strong></span>
+          <button class="btn btn-secondary" onclick="toggleMicroSD()">Eject / Insert</button>
+        </div>
+      </div>
+
+      <!-- SYSTEM & GAME STATUS -->
+      <div class="panel-section">
+        <h3>📊 Game & Telemetry Status</h3>
+        <div class="status-box" id="telemetryBox">
+          System Ready. MicroSD loaded with "Alphabet Adventure". Twist the outer ring to match Astronaut Island (45°)!
+        </div>
+        <div class="mechanic-row" style="margin-top: 10px;">
+          <span>Score: <strong id="scoreVal">0</strong> pts</span>
+          <span>Completed: <strong id="completedLettersVal">None</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // --- ADVENTURE DATA ---
+    const ADVENTURE_LEVELS = [
+      {
+        letter: "A",
+        name: "Astronaut Island",
+        phonics: "AH",
+        word: "APPLE",
+        targetAngle: 45,
+        tracePoints: [[70, 200], [135, 60], [200, 200], [95, 140], [175, 140]],
+        reward: "Golden Astronaut Apple"
+      },
+      {
+        letter: "B",
+        name: "Bumblebee Bay",
+        phonics: "BUH",
+        word: "BEAR",
+        targetAngle: 120,
+        tracePoints: [[80, 60], [80, 210], [160, 100], [80, 135], [170, 175], [80, 210]],
+        reward: "Bouncing Honey Berry"
+      },
+      {
+        letter: "C",
+        name: "Crystal Cave",
+        phonics: "KUH",
+        word: "CAT",
+        targetAngle: 210,
+        tracePoints: [[180, 80], [135, 60], [80, 135], [135, 210], [180, 190]],
+        reward: "Cosmic Cat Crystal"
+      },
+      {
+        letter: "D",
+        name: "Dragon Dunes",
+        phonics: "DUH",
+        word: "DRAGON",
+        targetAngle: 300,
+        tracePoints: [[80, 60], [80, 210], [160, 180], [180, 135], [160, 90], [80, 60]],
+        reward: "Dazzling Dragon Diamond"
+      }
+    ];
+
+    let currentLevelIndex = 0;
+    let currentStage = 1; // 1: Twist, 2: Shake, 3: Pull, 4: Talk, 5: Stylus
+    let score = 0;
+    let completedLetters = [];
+    let cartridgeInserted = true;
+    let stylusDocked = true;
+
+    // --- BEAD SIMULATION ---
+    const beadCanvas = document.getElementById("beadsCanvas");
+    const bCtx = beadCanvas.getContext("2d");
+    const TOTAL_BEADS = 24;
+    const beads = [];
+    const BEAD_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#10b981", "#8b5cf6"];
+
+    for (let i = 0; i < TOTAL_BEADS; i++) {
+      const ang = (i * 2 * Math.PI) / TOTAL_BEADS;
+      beads.push({
+        x: 165 + Math.cos(ang) * 120,
+        y: 165 + Math.sin(ang) * 120,
+        vx: 0,
+        vy: 0,
+        r: 6,
+        color: BEAD_COLORS[i % BEAD_COLORS.length]
+      });
+    }
+
+    function renderBeads() {
+      bCtx.clearRect(0, 0, 330, 330);
+      const cx = 165, cy = 165, maxR = 145;
+
+      beads.forEach(b => {
+        // Friction & gravity towards center
+        b.vx *= 0.95;
+        b.vy *= 0.95;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Circular boundary check
+        const dx = b.x - cx;
+        const dy = b.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > maxR - b.r) {
+          const nx = dx / dist;
+          const ny = dy / dist;
+          b.x = cx + nx * (maxR - b.r);
+          b.y = cy + ny * (maxR - b.r);
+          b.vx = -b.vx * 0.7;
+          b.vy = -b.vy * 0.7;
+        }
+
+        bCtx.beginPath();
+        bCtx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        bCtx.fillStyle = b.color;
+        bCtx.shadowColor = b.color;
+        bCtx.shadowBlur = 6;
+        bCtx.fill();
+        bCtx.shadowBlur = 0;
+      });
+
+      requestAnimationFrame(renderBeads);
+    }
+    renderBeads();
+
+    // --- STYLUS CANVAS ---
+    const stylusCanvas = document.getElementById("stylusCanvas");
+    const sCtx = stylusCanvas.getContext("2d");
+    let isDrawing = false;
+    let stylusPoints = [];
+
+    function drawGuideTemplate() {
+      sCtx.clearRect(0, 0, 270, 270);
+      const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+      if (currentStage === 5) {
+        // Draw dotted template
+        sCtx.beginPath();
+        sCtx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+        sCtx.lineWidth = 14;
+        sCtx.lineCap = "round";
+        sCtx.lineJoin = "round";
+        sCtx.setLineDash([8, 8]);
+        lvl.tracePoints.forEach((p, idx) => {
+          if (idx === 0) sCtx.moveTo(p[0], p[1]);
+          else sCtx.lineTo(p[0], p[1]);
+        });
+        sCtx.stroke();
+        sCtx.setLineDash([]);
+      }
+
+      // Re-draw user strokes
+      if (stylusPoints.length > 1) {
+        sCtx.beginPath();
+        sCtx.strokeStyle = "#fbbf24";
+        sCtx.lineWidth = 6;
+        sCtx.lineCap = "round";
+        sCtx.lineJoin = "round";
+        stylusPoints.forEach((p, idx) => {
+          if (idx === 0) sCtx.moveTo(p.x, p.y);
+          else sCtx.lineTo(p.x, p.y);
+        });
+        sCtx.stroke();
+      }
+    }
+
+    stylusCanvas.addEventListener("pointerdown", (e) => {
+      if (stylusDocked) {
+        setTelemetry("⚠️ Stylus is docked in holster! Click 'Dock/Undock' first.");
+        return;
+      }
+      isDrawing = true;
+      const rect = stylusCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      stylusPoints.push({ x, y });
+      drawGuideTemplate();
+    });
+
+    stylusCanvas.addEventListener("pointermove", (e) => {
+      if (!isDrawing) return;
+      const rect = stylusCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      stylusPoints.push({ x, y });
+      drawGuideTemplate();
+
+      if (currentStage === 5 && stylusPoints.length >= 8) {
+        checkStylusStage();
+      }
+    });
+
+    window.addEventListener("pointerup", () => {
+      if (isDrawing && currentStage === 5 && stylusPoints.length >= 8) {
+        checkStylusStage();
+      }
+      isDrawing = false;
+    });
+
+    // --- GAME LOGIC & STAGES ---
+    function updateHUD() {
+      const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+      document.getElementById("screenTargetLetter").innerText = lvl.letter;
+      document.getElementById("screenIslandName").innerText = lvl.name;
+      document.getElementById("scoreVal").innerText = score;
+      document.getElementById("completedLettersVal").innerText = completedLetters.join(", ") || "None";
+
+      for (let s = 1; s <= 5; s++) {
+        const stepEl = document.getElementById("step" + s);
+        stepEl.classList.remove("active", "done");
+        if (s < currentStage) stepEl.classList.add("done");
+        else if (s === currentStage) stepEl.classList.add("active");
+      }
+
+      const instructions = [
+        `Stage 1: Twist dial to ${lvl.targetAngle}°`,
+        "Stage 2: Rattle sphere to clear fog",
+        "Stage 3: Pull spring ripcord to launch",
+        `Stage 4: Speak phonics '${lvl.phonics}' into mic`,
+        `Stage 5: Un-dock stylus & trace '${lvl.letter}'`
+      ];
+      document.getElementById("screenBadge").innerText = `STAGE ${currentStage}: ${["TWIST", "SHAKE", "PULL", "TALK", "STYLUS"][currentStage - 1]}`;
+      document.getElementById("screenInstruction").innerText = instructions[currentStage - 1];
+      drawGuideTemplate();
+    }
+
+    function setTelemetry(msg) {
+      document.getElementById("telemetryBox").innerHTML = msg;
+    }
+
+    // --- 1. TWIST MECHANIC ---
+    let twistDegrees = 0;
+    function onTwistSlider(val) {
+      twistDegrees = parseFloat(val);
+      document.getElementById("twistAngleLabel").innerText = `${twistDegrees}°`;
+      document.getElementById("twistRing").style.transform = `rotate(${twistDegrees}deg)`;
+
+      if (currentStage === 1) {
+        const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+        const diff = Math.abs(((twistDegrees - lvl.targetAngle + 180) % 360) - 180);
+        if (diff <= 12) {
+          setTelemetry(`🎯 Twist Locked! Compass aligned with ${lvl.name} at ${lvl.targetAngle}°!`);
+          currentStage = 2;
+          score += 100;
+          updateHUD();
+        } else {
+          setTelemetry(`Twisting compass... Current: ${twistDegrees}°, Target: ${lvl.targetAngle}°`);
+        }
+      }
+    }
+
+    function simulateTwist() {
+      const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+      document.getElementById("twistSlider").value = lvl.targetAngle;
+      onTwistSlider(lvl.targetAngle);
+    }
+
+    // --- 2. SHAKE MECHANIC ---
+    function simulateShake() {
+      const sphere = document.getElementById("sphereChassis");
+      sphere.classList.add("shaking");
+
+      // Agitate beads
+      beads.forEach(b => {
+        b.vx = (Math.random() - 0.5) * 35;
+        b.vy = (Math.random() - 0.5) * 35;
+      });
+
+      document.getElementById("shakeLabel").innerText = "3.2g";
+
+      setTimeout(() => {
+        sphere.classList.remove("shaking");
+        document.getElementById("shakeLabel").innerText = "0.0";
+      }, 700);
+
+      if (currentStage === 2) {
+        setTelemetry("📳 Shake detected! Internal beads rattled rapidly, scattering the cloud cover!");
+        currentStage = 3;
+        score += 100;
+        updateHUD();
+      }
+    }
+
+    // --- 3. PULL MECHANIC ---
+    let pullTension = 0;
+    function onPullSlider(val) {
+      pullTension = parseInt(val);
+      document.getElementById("pullLabel").innerText = `${pullTension}%`;
+      const cord = document.getElementById("pullCordLine");
+      cord.style.height = `${30 + pullTension * 0.5}px`;
+
+      if (currentStage === 3 && pullTension >= 75) {
+        setTelemetry("🏹 Ripcord primed to maximum tension! Release or snap to launch!");
+      }
+    }
+
+    function simulatePullLaunch() {
+      onPullSlider(85);
+      setTimeout(() => {
+        // Snap back
+        onPullSlider(0);
+        document.getElementById("pullSlider").value = 0;
+        if (currentStage === 3) {
+          setTelemetry("🚀 WHOOSH! Spring ripcord recoiled! Slingshot landed explorer on the island!");
+          currentStage = 4;
+          score += 100;
+          updateHUD();
+        }
+      }, 400);
+    }
+
+    // --- 4. TALK MECHANIC ---
+    function simulateVoiceSpeak() {
+      const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+      const fill = document.getElementById("voiceFill");
+      fill.style.width = "95%";
+      document.getElementById("voiceLabel").innerText = `"${lvl.phonics}" (95 dB)`;
+
+      setTimeout(() => {
+        fill.style.width = "0%";
+        document.getElementById("voiceLabel").innerText = "Silent";
+      }, 900);
+
+      if (currentStage === 4) {
+        setTelemetry(`🎙️ Microphone captured phonics sound '${lvl.phonics}'! Letter guardian awakens!`);
+        currentStage = 5;
+        score += 100;
+        updateHUD();
+      }
+    }
+
+    // --- 5. STYLUS MECHANIC ---
+    function toggleStylusDock() {
+      stylusDocked = !stylusDocked;
+      const pen = document.getElementById("stylusPen");
+      const label = document.getElementById("stylusStateLabel");
+      if (stylusDocked) {
+        pen.classList.remove("undocked");
+        label.innerText = "Docked";
+        setTelemetry("Stylus returned to sphere holster.");
+      } else {
+        pen.classList.add("undocked");
+        label.innerText = "Un-docked (Ready)";
+        setTelemetry("Stylus un-docked! You can now draw or trace on the 6\" circular touchscreen.");
+      }
+    }
+
+    function autoTraceStylus() {
+      if (stylusDocked) toggleStylusDock();
+      const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+      stylusPoints = lvl.tracePoints.map(p => ({ x: p[0], y: p[1] }));
+      drawGuideTemplate();
+      checkStylusStage();
+    }
+
+    function checkStylusStage() {
+      if (currentStage === 5) {
+        const lvl = ADVENTURE_LEVELS[currentLevelIndex];
+        completedLetters.push(lvl.letter);
+        score += 200;
+        setTelemetry(`✨ Letter '${lvl.letter}' flawlessly drawn with the stylus! Earned: <strong>${lvl.reward}</strong>!`);
+
+        currentLevelIndex++;
+        if (currentLevelIndex >= ADVENTURE_LEVELS.length) {
+          setTelemetry(`🏆 CONGRATULATIONS! All letters forged! Final Score: ${score} pts.`);
+          currentStage = 5;
+        } else {
+          currentStage = 1;
+        }
+        stylusPoints = [];
+        setTimeout(updateHUD, 1000);
+      }
+    }
+
+    // --- 6. MICROSD MECHANIC ---
+    function toggleMicroSD() {
+      const card = document.getElementById("microSDCard");
+      const label = document.getElementById("sdStatusLabel");
+      cartridgeInserted = !cartridgeInserted;
+
+      if (cartridgeInserted) {
+        card.classList.remove("ejected");
+        label.innerText = "Inserted";
+        setTelemetry("💾 MicroSD Cartridge loaded: 'Alphabet Adventure: Realm of Letters' (v1.0.0).");
+      } else {
+        card.classList.add("ejected");
+        label.innerText = "Ejected";
+        setTelemetry("⚠️ MicroSD cartridge ejected! Insert cartridge to save progress.");
+      }
+    }
+
+    // Initial setup
+    updateHUD();
+  </script>
+</body>
+</html>
